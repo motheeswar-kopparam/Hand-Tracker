@@ -5,10 +5,12 @@ import numpy as np
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
+
+# CHANGE: Set max_num_hands to 2
 hands = mp_hands.Hands(static_image_mode=False,
-                        max_num_hands=1,
-                        min_detection_confidence=0.7,
-                        min_tracking_confidence=0.7)
+                       max_num_hands=2, 
+                       min_detection_confidence=0.7,
+                       min_tracking_confidence=0.7)
 
 # Colors for UI overlays (reference style)
 CYAN = (255, 255, 0)
@@ -81,7 +83,12 @@ while cap.isOpened():
     results = hands.process(rgb)
 
     if results.multi_hand_landmarks:
-        for hand_landmarks in results.multi_hand_landmarks:
+        # Loop through BOTH hands and their labels (Left/Right)
+        for hand_landmarks, handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+            
+            # Get Hand Label (Left or Right)
+            hand_label = handedness.classification[0].label
+            
             h, w, _ = frame.shape
             lm = [(int(l.x * w), int(l.y * h)) for l in hand_landmarks.landmark]
 
@@ -107,10 +114,15 @@ while cap.isOpened():
                 draw_core_pattern(frame, palm, 35)
                 draw_hud_details(frame, palm)
                 draw_arc_segments(frame, palm)
+                
+                # Show Left/Right Label
+                cv2.putText(frame, hand_label, (palm[0]-20, palm[1]+10), cv2.FONT_HERSHEY_PLAIN, 2, WHITE, 2)
+
                 # Dynamic lines to fingertips
                 for i in [4, 8, 12, 16, 20]:
                     cv2.line(frame, palm, lm[i], CYAN, 2)
                     cv2.circle(frame, lm[i], 12, ORANGE, -1)
+                
                 # Numeric overlay (angle between thumb and index)
                 v1 = np.array(lm[4]) - np.array(palm)
                 v2 = np.array(lm[8]) - np.array(palm)
@@ -118,7 +130,8 @@ while cap.isOpened():
                     angle = int(np.degrees(np.arccos(np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2)+1e-6))))
                 except:
                     angle = 0
-                cv2.putText(frame, f'{angle}°', (palm[0]+40, palm[1]-40), cv2.FONT_HERSHEY_DUPLEX, 1.5, WHITE, 4)
+                cv2.putText(frame, f'{angle}', (palm[0]+40, palm[1]-40), cv2.FONT_HERSHEY_DUPLEX, 1.5, WHITE, 4)
+            
             elif pinch_val < 60:
                 # Pinch gesture: show orange arcs and value
                 draw_glow_circle(frame, palm, 60, ORANGE, 3, glow=20)
