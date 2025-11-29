@@ -1,4 +1,4 @@
-# Hand Tracking AR UI
+# Hand Tracking
 
 This project is an Augmented Reality (AR) Hand Tracking User Interface demo. It uses Python, OpenCV, and MediaPipe to detect your hand via webcam and overlays futuristic UI graphics—radial gauges, HUD elements, and gesture-based controls—directly onto your hand in real time.
 
